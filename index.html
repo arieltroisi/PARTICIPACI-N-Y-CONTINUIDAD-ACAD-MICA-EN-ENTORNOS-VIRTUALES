@@ -444,9 +444,8 @@ footer{padding:3rem 4rem;border-top:1px solid var(--border);display:flex;justify
 
   <!-- Razones ausentismo -->
   <div class="card reveal">
-    <div class="card-title">Razones para ausentarse o disminuir la participación — respuesta múltiple (% sobre encuestados)</div>
-    <div class="legend"><span><span class="lsq" style="background:var(--red2)"></span>% menciones</span></div>
-    <div class="chart-box" style="height:260px"><canvas id="enc_razones"></canvas></div>
+    <div class="card-title">Razones para ausentarse a clase (% sobre total de menciones)</div>
+    <div class="chart-box" style="height:360px"><canvas id="enc_razones"></canvas></div>
   </div>
 
   <!-- Motivaciones elección + recursos -->
@@ -764,7 +763,7 @@ const ENC = {
   freq: {labels:["Nunca","Rara vez","A veces","Casi siempre","Siempre"], pct:[4.8,19.8,35.5,23.4,16.5]},
   razones: {
     labels:["Falta de tiempo","Exigencias laborales","Sobrecarga académica","Problemas personales","Falta de motivación","Dinámica poco atractiva","Otro","Dif. para comprender","Escasa interacción","Dif. técnicas"],
-    pct:[30.3,29.9,27.0,26.6,21.9,21.5,19.0,11.7,9.1,6.2]
+    pct:[15,15,13,13,11,11,9,7,4,3]
   },
   motivos: {
     labels:["Ahorro de traslado","Compatibilidad laboral","Organización flexible","Preferencia personal","Materia extra","Experiencias previas","Falta de cupo","Otro"],
@@ -800,8 +799,87 @@ new Chart("enc_freq",{type:"bar",data:{labels:ENC.freq.labels,datasets:[{data:EN
   backgroundColor:[RED,AMB,"rgba(128,128,128,0.4)",BLUE,GRN],borderRadius:4}]},
   options:{...base,scales:{x:{grid:{color:GRID},ticks:TK},y:{grid:{color:GRID},ticks:{...TK,callback:v=>v+"%"},max:40}}}});
 
-new Chart("enc_razones",{type:"bar",data:{labels:ENC.razones.labels,datasets:[{data:ENC.razones.pct,backgroundColor:RED,borderRadius:4}]},
-  options:{...base,indexAxis:"y",scales:{x:{grid:{color:GRID},ticks:{...TK,callback:v=>v+"%"},max:35},y:{grid:{color:GRID},ticks:{...TK,font:{size:10}}}}}});
+new Chart("enc_razones",{type:"pie",data:{
+  labels:ENC.razones.labels,
+  datasets:[{
+    data:ENC.razones.pct,
+    backgroundColor:[
+      "rgba(232,69,60,0.6)",
+      "rgba(91,158,255,0.6)",
+      "rgba(245,166,35,0.6)",
+      "rgba(44,207,150,0.6)",
+      "rgba(180,100,220,0.6)",
+      "rgba(232,120,80,0.6)",
+      "rgba(130,200,255,0.6)",
+      "rgba(255,210,80,0.6)",
+      "rgba(80,190,150,0.6)",
+      "rgba(210,130,180,0.6)"
+    ],
+    borderColor:"rgba(13,15,18,0.9)",
+    borderWidth:2,
+    hoverOffset:6
+  }]},
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{
+        display:true,
+        position:"right",
+        labels:{
+          font:{size:12,family:"Syne, sans-serif"},
+          color:"rgba(180,185,200,0.9)",
+          padding:16,
+          boxWidth:14,
+          generateLabels:function(chart){
+            const data=chart.data;
+            return data.labels.map(function(label,i){
+              return {
+                text: label+"  "+data.datasets[0].data[i]+"%",
+                fillStyle: data.datasets[0].backgroundColor[i],
+                strokeStyle: "rgba(13,15,18,0.5)",
+                fontColor: "rgba(180,185,200,0.9)",
+                lineWidth:1,
+                index:i
+              };
+            });
+          }
+        }
+      },
+      tooltip:{callbacks:{label:ctx=>" "+ctx.label+": "+ctx.parsed+"%"}},
+      datalabels:{
+        display:false
+      }
+    }
+  },
+  plugins:[{
+    id:"pieLabels",
+    afterDatasetsDraw:function(chart){
+      const ctx2=chart.ctx;
+      const ds=chart.data.datasets[0];
+      const meta=chart.getDatasetMeta(0);
+      meta.data.forEach(function(arc,i){
+        const model=arc;
+        const total=ds.data.reduce((a,b)=>a+b,0);
+        const pct=ds.data[i];
+        if(pct<4) return;
+        const mid=(model.startAngle+model.endAngle)/2;
+        const r=model.outerRadius*0.65;
+        const x=model.x+Math.cos(mid)*r;
+        const y=model.y+Math.sin(mid)*r;
+        ctx2.save();
+        ctx2.font="bold 13px Syne, sans-serif";
+        ctx2.shadowColor="rgba(0,0,0,0.7)";
+        ctx2.shadowBlur=4;
+        ctx2.fillStyle="#ffffff";
+        ctx2.textAlign="center";
+        ctx2.textBaseline="middle";
+        ctx2.fillText(pct+"%",x,y);
+        ctx2.restore();
+      });
+    }
+  }]
+});
 
 new Chart("enc_motivos",{type:"bar",data:{labels:ENC.motivos.labels,datasets:[{data:ENC.motivos.pct,backgroundColor:GRN,borderRadius:4}]},
   options:{...base,indexAxis:"y",scales:{x:{grid:{color:GRID},ticks:{...TK,callback:v=>v+"%"},max:70},y:{grid:{color:GRID},ticks:{...TK,font:{size:10}}}}}});
